@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="IGame.fs" />
+    <Compile Include="Carta.fs" />
+    <Compile Include="ISMCTS.fs" />
+    <Compile Include="TrionfoGame.fs" />
+    <Compile Include="Trionfale.fs" />
+  </ItemGroup>
+
+</Project>

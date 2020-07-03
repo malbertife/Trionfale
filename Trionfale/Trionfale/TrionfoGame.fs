@@ -1,5 +1,9 @@
 ﻿namespace TrionfaleLib
 
+open Numpy
+open Keras.Models
+open Keras.Layers
+
 module TrionfoGame =
 
     open IGame
@@ -64,8 +68,8 @@ module TrionfoGame =
 
 
     type statoGiocatore = {carteInMano: carta list;
-                            passate: passata list;
-                            trionfa: seme option}
+                           passate: passata list;
+                           trionfa: seme option}
 
     let getStato (g: int) (m: mano) = 
            {carteInMano = m.carte 
@@ -98,8 +102,13 @@ module TrionfoGame =
   
     let aggiornaManoCarta (m: mano) (c: carta) =
         {m with carte =  m.carte |> List.filter (fun cg -> cg.carta <> c);
-                passate = aggiornaPassate m.trionfa.Value c m.passate (m.passate.Length = 10)}  
+                passate = aggiornaPassate m.trionfa.Value c m.passate (m.passate.Length = 10)} 
+                
+    let aggiornaStatoGiocatore (s: statoGiocatore) (c: carta) =
+        {s with carteInMano =  s.carteInMano |> List.filter (fun cg -> cg <> c);
+                passate = aggiornaPassate s.trionfa.Value c s.passate (s.passate.Length = 10)}
 
+   
     let aggiornaMano (m: mano) (strat: statoGiocatore -> carta) =
         let statoG = getStato (aChiTocca m) m
         let c = strat statoG
@@ -195,10 +204,10 @@ module TrionfoGame =
             giocabili statoG
 
     type Trionfo()  =
-            interface IGame<mano,carta> with
+            interface IGame<statoGiocatore,mano,carta> with
                 member this.valid_moves s = available s |> Seq.ofList
                 member this.apply_move s m = aggiornaManoCarta s m
-                member this.isFinal s = (this :> IGame<mano,carta>).valid_moves s |> Seq.length = 0
+                member this.isFinal s = (this :> IGame<statoGiocatore,mano,carta>).valid_moves s |> Seq.length = 0
                 member this.score s = 
                     let pari, _ = punteggioPassate s.passate s.trionfa.Value
                     float(2 * pari - 11) / 11.0

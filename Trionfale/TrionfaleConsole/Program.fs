@@ -19,7 +19,8 @@ let giocaMano () =
 [<EntryPoint>]
 let main argv =
   let mano = giocaMano()
-  printfn "Trionfa: %s" (mano.trionfa.Value.ToString())
+  let trionfa = mano.trionfa.Value.ToString()
+  printfn "Trionfa: %s" (trionfa)
   for p in mano.passate do
     printf "%s" (passataToString p)
   let p02, p13 = punteggioPassate mano.passate mano.trionfa.Value

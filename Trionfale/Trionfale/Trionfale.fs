@@ -3,11 +3,14 @@
 open IGame
 open ISMCTS
 open System
+open Numpy
+
 
 module Trionfale =
 
     open Carta
     open TrionfoGame    
+
 
     let semeToString (s: seme) = s.ToString().Substring(0,1)
     let numeroToStringBBros = function
@@ -48,13 +51,15 @@ module Trionfale =
 
 
     let rec so_ismcts (s0: statoGiocatore)  (n: int) =
-        let controller = new is_mcts_controller<mano,carta>(new Trionfo())
-        let view = { new IGameView<mano> with
+        let view = { new IGameView<statoGiocatore,mano,carta> with
                      member this.determinize () = determinize s0
+                     member this.update_player_state s m = aggiornaStatoGiocatore s m
+                     member this.playerState () = s0
                      member this.toPlay () = let p = s0.passate |> List.last
                                              if (p.primo + p.carte.Length) % 2 = 0
                                              then Max
                                              else Min}
+        let controller = new is_mcts_controller<statoGiocatore,mano,carta>(view, new Trionfo())
         controller.bestMove view n
     let strategia_so_ismcts (s0: statoGiocatore) =
         let carta = so_ismcts s0 2000

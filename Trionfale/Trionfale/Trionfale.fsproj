@@ -12,4 +12,8 @@
     <Compile Include="Trionfale.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Keras.NET" Version="3.7.4.2" />
+  </ItemGroup>
+
 </Project>

@@ -12,4 +12,5 @@ type IGameView<'TPlayerState,'TState, 'TMove> =
     abstract member playerState: unit -> 'TPlayerState
     abstract member update_player_state: 'TPlayerState -> 'TMove -> 'TPlayerState
     abstract member determinize: unit -> 'TState
+    abstract member embed: 'TPlayerState -> float[]
     abstract member toPlay: unit -> Player

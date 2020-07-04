@@ -4,6 +4,10 @@ open IGame
 open ISMCTS
 open System
 open Numpy
+open Keras.Models
+open Keras.Layers
+open Keras
+open Keras.Optimizers
 
 
 module Trionfale =
@@ -46,23 +50,76 @@ module Trionfale =
           | '9' -> Cavallo
           | 'A' -> Re
           {seme = charToSeme (s.Chars(0)); numero = numero}
+    
+    let indice (c: carta) = 
+        ordine c - 1
+    
+    let statoGiocatoreToArray (ps:statoGiocatore) =
+        
+        let array = Array.init 84 (fun _ -> 0.0)
+        for c in ps.carteInMano do    
+            array.[indice c] <- 1.
+        for i = 40 to 79 do
+            array.[i] <- 1.0
+        for c in ps.passate |> List.collect (fun p -> p.carte) do
+            array.[40 + indice c] <- 0.
+        if ps.trionfa.IsSome then array.[80 + (indiceSeme ps.trionfa.Value)] <- 1.0
+        array
       
+    let record (ps: statoGiocatore) (value: float) = 
+          if not (System.IO.File.Exists("evaluations.csv"))
+          then use file = System.IO.File.CreateText("evaluations.csv");
+               let intestazioni = Array.init 81 (fun _ -> "")
+               for carta in nuovoMazzo() do
+                   intestazioni.[indice carta] <- "M" + cartaToStringBreve carta
+                   intestazioni.[indice carta + 40] <- "A" + cartaToStringBreve carta
+               for i = 0 to 79 do
+                   fprintf file "%s;" intestazioni.[i]
+               fprintfn file "TB;TC;TD;TS;Score"
+          use file = System.IO.File.AppendText("evaluations.csv")
+          let valori = statoGiocatoreToArray ps 
+          for i = 0 to 84 do
+              fprintf file "%.1f;" valori.[i]
+          fprintfn file "%.3f" value
+    
+    let getModel() =
+        let model = new Sequential();
+        model.Add(new Dense(100, input_shape = new Shape(84), activation= "relu"))
+        model.Add(new Dense(1, activation= "relu"))
+        model.Compile(loss= "mean_squared_error" , optimizer=new StringOrInstance((new Adam()).ToPython()), metrics=[|"mean_squared_error"|])
+        model
 
-
+    let model = getModel()
 
     let rec so_ismcts (s0: statoGiocatore)  (n: int) =
+
+        
+        
+
+        
         let view = { new IGameView<statoGiocatore,mano,carta> with
                      member this.determinize () = determinize s0
                      member this.update_player_state s m = aggiornaStatoGiocatore s m
                      member this.playerState () = s0
+                     member this.embed ps = statoGiocatoreToArray ps
                      member this.toPlay () = let p = s0.passate |> List.last
                                              if (p.primo + p.carte.Length) % 2 = 0
                                              then Max
                                              else Min}
-        let controller = new is_mcts_controller<statoGiocatore,mano,carta>(view, new Trionfo())
-        controller.bestMove view n
+        let estimate (ps : statoGiocatore) = 
+            let npa = np.array(view.embed ps,  ndmin=Nullable(2))
+            let pred = model.Predict(npa, verbose=0)
+            pred.[0].[0].item(0)
+        let fit (ps: statoGiocatore) (value: float) =
+            let input = view.embed ps
+            let npa = np.array(input, ndmin=Nullable(2))
+            let output = [|value|]
+            let npv = np.array(output)
+            model.Fit(npa, npv) |> ignore
+        let controller = new is_mcts_controller<statoGiocatore,mano,carta>(view, new Trionfo(), estimate, fit)
+        controller.bestMove view n 
     let strategia_so_ismcts (s0: statoGiocatore) =
-        let carta = so_ismcts s0 2000
+        let carta = so_ismcts s0 10
         carta
         
 

@@ -24,8 +24,11 @@ module TrionfoGame =
         | Cinque -> 2
         | Quattro -> 1
 
+    let indiceSeme (s0: seme) =
+        Array.findIndex (fun s -> s = s0) semi
+ 
     let ordine (c: carta) =
-        10 * (Array.findIndex (fun s -> s = c.seme) semi) + peso c.numero
+        10 * (indiceSeme c.seme) + peso c.numero
 
 
  

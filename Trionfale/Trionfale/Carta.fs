@@ -46,7 +46,7 @@ module Carta =
     let nuovoMazzo () =
         List.collect (fun seme -> (List.map (fun numero -> {seme = seme; numero = numero}) (Array.toList numeri)  )) (Array.toList semi)
 
-    let random = new Random()
+    let random = new Random(Guid.NewGuid().GetHashCode())
    
 
     let distribuisci (cl: carta list) (quante: (int * int) array) =

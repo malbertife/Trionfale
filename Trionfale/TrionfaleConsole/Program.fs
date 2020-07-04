@@ -10,7 +10,7 @@ let rec finisciMano (m: mano) strategia  =
     else finisciMano (aggiornaMano m strategia) strategia
 
 let strategia_so_ismcts (s0: statoGiocatore) =
-    let carta = so_ismcts s0 10
+    let carta = so_ismcts s0 1000
     carta
 
 let giocaMano (model) =

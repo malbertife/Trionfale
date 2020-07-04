@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>u</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Keras.NET" Version="3.7.4.2" />
+    <PackageReference Include="encog-dotnet-core" Version="3.4.0" />
   </ItemGroup>
 
 </Project>

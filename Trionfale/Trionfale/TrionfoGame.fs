@@ -1,9 +1,5 @@
 ﻿namespace TrionfaleLib
 
-open Numpy
-open Keras.Models
-open Keras.Layers
-
 module TrionfoGame =
 
     open IGame

@@ -1,7 +1,5 @@
 ﻿namespace TrionfaleLib
 
-open Keras.Models
-open Keras.Layers
 open System
 
 module ISMCTS =
@@ -65,7 +63,7 @@ module ISMCTS =
                                                                                             newNode newPlayerState (Some m) prior))
                  let selectedChild = v.children 
                                     |> List.filter (fun c -> List.exists (fun e -> e = c.data.move.Value) validMoves)
-                                    |> List.maxBy (fun c -> ucbScore  v c s 1.0)
+                                    |> List.maxBy (fun c -> ucbScore  v c s 2.0)
                  let move = selectedChild.data.move.Value
                  let reward = playout selectedChild 
                                       (view.update_player_state playerState move)
@@ -85,7 +83,7 @@ module ISMCTS =
                         (view.determinize())
                         (view.toPlay ())
                 |> ignore
-            let selectedChild = v0.children |> List.maxBy (fun c -> c.data.visit_count) 
+            let selectedChild = v0.children |> List.maxBy (fun c -> ucbScore  v0 c (view.toPlay ()) 2.0) 
             let value = value v0
             let move = selectedChild.data.move.Value
             record ps value

@@ -3,11 +3,13 @@
 open IGame
 open ISMCTS
 open System
-open Numpy
-open Keras.Models
-open Keras.Layers
-open Keras
-open Keras.Optimizers
+open Encog.Neural.Networks
+open Encog.Neural.Networks.Layers
+open Encog.Engine.Network.Activation
+open Encog.ML.Data.Basic
+open Encog.Neural.Networks.Training.Propagation.Back
+open Encog.Neural.Networks.Training.Propagation.Resilient
+open System.IO
 
 
 module Trionfale =
@@ -82,14 +84,34 @@ module Trionfale =
               fprintf file "%.1f;" valori.[i]
           fprintfn file "%.3f" value
     
-    let getModel() =
-        let model = new Sequential();
-        model.Add(new Dense(100, input_shape = new Shape(84), activation= "relu"))
-        model.Add(new Dense(1, activation= "relu"))
-        model.Compile(loss= "mean_squared_error" , optimizer=new StringOrInstance((new Adam()).ToPython()), metrics=[|"mean_squared_error"|])
-        model
+    //let getModel() =
+    //    let model = new Sequential();
+    //    model.Add(new Dense(100, input_shape = new Shape(84), activation= "relu"))
+    //    model.Add(new Dense(1, activation= "relu"))
+    //    model.Compile(loss= "mean_squared_error" , optimizer=new StringOrInstance((new Adam()).ToPython()), metrics=[|"mean_squared_error"|])
+    //    model
 
-    let model = getModel()
+    //let model = getModel()
+
+    let createNetwork() =
+        if File.Exists("nn.eg")
+        then Encog.Persist.EncogDirectoryPersistence.LoadObject(new FileInfo("nn.eg")) :?> BasicNetwork
+        else let network = BasicNetwork()
+             network.AddLayer( BasicLayer( ActivationTANH(), true, 84 ))
+             network.AddLayer( BasicLayer( ActivationTANH(), true, 100 ))
+             network.AddLayer( BasicLayer( ActivationTANH(), false, 1 ))
+             network.Structure.FinalizeStructure()
+             network.Reset()
+             network
+ 
+
+    let mutable network = createNetwork()
+
+    let mutable trainingSet = BasicMLDataSet([||], [||])
+
+
+    let trainer = ResilientPropagation(network, trainingSet)
+    trainer.BatchSize <- 1
 
     let rec so_ismcts (s0: statoGiocatore)  (n: int) =
 
@@ -107,23 +129,27 @@ module Trionfale =
                                              then Max
                                              else Min}
         let estimate (ps : statoGiocatore) = 
-            let npa = np.array(view.embed ps,  ndmin=Nullable(2))
-            let pred = model.Predict(npa, verbose=0)
-            pred.[0].[0].item(0)
+            let trainingSet = BasicMLDataSet([|view.embed ps |], [|[|0.|]|])
+            let item = trainingSet.Item(0)
+            let output = network.Compute(item.Input)
+            output.[0]
         let fit (ps: statoGiocatore) (value: float) =
-            let input = view.embed ps
-            let npa = np.array(input, ndmin=Nullable(2))
-            let output = [|value|]
-            let npv = np.array(output)
-            model.Fit(npa, npv) |> ignore
+            printf "%f %f " (estimate ps) value
+            let input = new BasicMLData(view.embed ps)
+            let ideal = new BasicMLData([|value|])
+            trainingSet.Add(input,ideal)
+            trainer.Iteration()
+            printfn "%f" trainer.Error
+            Encog.Persist.EncogDirectoryPersistence.SaveObject(new System.IO.FileInfo("nn.eg"), network)
         let controller = new is_mcts_controller<statoGiocatore,mano,carta>(view, new Trionfo(), estimate, fit)
         controller.bestMove view n 
     let strategia_so_ismcts (s0: statoGiocatore) =
-        let carta = so_ismcts s0 10
+        let carta = so_ismcts s0 1000
         carta
         
 
     //let giocaMano () =
+
     //    playout (nuovaManoCasuale()) strategia_so_ismcts
 
 
